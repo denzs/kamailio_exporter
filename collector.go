@@ -422,6 +422,9 @@ func (c *Collector) scrapeMethod(method string) (map[string][]MetricValue, error
 	case "tm.stats":
 		for _, item := range items {
 			i, _ := item.Value.Int()
+			if err != nil {
+				log.Printf("[error] %s: %s", item.Key, err)
+			}
 
 			if codeRegex.MatchString(item.Key) {
 				// this item is a "code" statistic, eg "200" or "6xx"
@@ -439,15 +442,24 @@ func (c *Collector) scrapeMethod(method string) (map[string][]MetricValue, error
 		}
 	case "tls.info":
 		fallthrough
-	case "core.shmmem":
-		fallthrough
 	case "core.tcp_info":
 		fallthrough
 	case "dlg.stats_active":
 		fallthrough
 	case "core.uptime":
 		for _, item := range items {
-			i, _ := item.Value.Int()
+			i, err := item.Value.Int()
+			if err != nil {
+				log.Printf("[error] %s: %s", item.Key, err)
+			}
+			metrics[item.Key] = []MetricValue{{Value: float64(i)}}
+		}
+	case "core.shmmem":
+		for _, item := range items {
+			i, err := item.Value.Double()
+			if err != nil {
+				log.Printf("[error] %s: %s", item.Key, err)
+			}
 			metrics[item.Key] = []MetricValue{{Value: float64(i)}}
 		}
 	case "dispatcher.list":
